@@ -5,11 +5,14 @@ Minimalist shell prompt in C. "sh" inverted.
 ## What it does
 
 ```
-✘ 1 ~/pers/tools/hs on main REBASING +2 !1 ?3 ↑1 ↓2
-❯
+~/Projects/hs :: main +2!1?3 ↑1↓2 ./ 
 ```
 
-Segments: exit code, directory, git branch, git state, status counts (`+`staged `!`modified `?`untracked `×`conflicted), ahead/behind, stash, prompt char.
+```
+
+Single line: exit code, directory, git context, prompt. Context appears only when relevant.
+
+`+`staged `!`modified `?`untracked `x`conflicted `↑`ahead `↓`behind `~`stash `&`jobs
 
 ## Dependencies
 
@@ -44,12 +47,12 @@ Set `HS_AGENT=1` to get JSON instead of a prompt string:
 
 ```sh
 $ HS_AGENT=1 hs prompt --exit-code=0 --shell=zsh
-{"cwd":"/home/user/project","exit_code":0,"git":{"branch":"main","detached":false,"dirty":true,"staged":1,"modified":2,"untracked":0,"conflicted":0,"ahead":1,"behind":0,"stash":0,"state":"none"}}
+{"cwd":"/home/user/project","exit_code":0,"duration_ms":0,"jobs":0,"ssh":false,"git":{"branch":"main","detached":false,"dirty":true,"staged":1,"modified":2,"untracked":0,"conflicted":0,"ahead":1,"behind":0,"stash":0,"state":"none"}}
 ```
 
 ## Configuration
 
-Edit `config.h` and recompile. Colors, symbols, and feature toggles are all `#define`s.
+Edit `config.h` and recompile. Colors, symbols, thresholds, and feature toggles are all `#define`s.
 
 ## Nix
 
