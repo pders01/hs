@@ -177,6 +177,25 @@ cmd_prompt(int argc, char **argv)
 	prompt_buf_t pb;
 	prompt_init(&pb, sh);
 
+	/* Segment: user@host (SSH only) */
+	int is_ssh = (getenv("SSH_CONNECTION") || getenv("SSH_TTY"));
+	if (is_ssh) {
+		char host[256];
+		if (gethostname(host, sizeof(host)) != 0)
+			snprintf(host, sizeof(host), "?");
+		const char *user = getenv("USER");
+		if (!user) {
+			struct passwd *pw = getpwuid(getuid());
+			user = pw ? pw->pw_name : "?";
+		}
+		prompt_color(&pb, HS_COLOR_SSH);
+		prompt_append(&pb, user);
+		prompt_append(&pb, "@");
+		prompt_append(&pb, host);
+		prompt_reset(&pb);
+		prompt_append(&pb, " ");
+	}
+
 	/* Segment: exit code */
 	if (exit_code != 0) {
 		char tmp[16];
@@ -337,8 +356,9 @@ cmd_prompt(int argc, char **argv)
 	/* Agent mode: JSON output instead of prompt */
 	const char *agent = getenv("HS_AGENT");
 	if (agent && strcmp(agent, "1") == 0) {
-		printf("{\"cwd\":\"%s\",\"exit_code\":%d,\"duration_ms\":%ld,\"jobs\":%d",
-		       cwd, exit_code, duration_ms, jobs);
+		printf("{\"cwd\":\"%s\",\"exit_code\":%d,\"duration_ms\":%ld,\"jobs\":%d,\"ssh\":%s",
+		       cwd, exit_code, duration_ms, jobs,
+		       is_ssh ? "true" : "false");
 		if (gi.is_repo) {
 			const char *st = git_state_string(gi.state);
 			printf(",\"git\":{\"branch\":\"%s\",\"detached\":%s,"

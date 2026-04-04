@@ -35,6 +35,7 @@
 #define HS_COLOR_STASH      "1;34"  /* bold blue                      */
 #define HS_COLOR_OK         "1;32"  /* bold green                     */
 #define HS_COLOR_ERR        "1;31"  /* bold red                       */
+#define HS_COLOR_SSH        "1;33"  /* bold yellow                    */
 #define HS_COLOR_DIM        "2"     /* dim/faint                      */
 #define HS_COLOR_DURATION   "1;33"  /* bold yellow                    */
 #define HS_COLOR_JOBS       "1;34"  /* bold blue                      */
