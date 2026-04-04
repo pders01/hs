@@ -15,10 +15,23 @@ static void
 cmd_init_bash(void)
 {
 	puts(
+		"__hs_start=\n"
+		"__hs_preexec() {\n"
+		"    __hs_start=\"${EPOCHREALTIME:-}\"\n"
+		"}\n"
 		"__hs_precmd() {\n"
 		"    local e=$?\n"
-		"    PS1=\"$(hs prompt --exit-code=$e --shell=bash)\"\n"
+		"    local d=0\n"
+		"    if [ -n \"$__hs_start\" ]; then\n"
+		"        local now=\"${EPOCHREALTIME:-}\"\n"
+		"        if [ -n \"$now\" ]; then\n"
+		"            d=$(printf '%s\\n' \"$__hs_start $now\" | awk '{printf \"%d\", ($2-$1)*1000}')\n"
+		"        fi\n"
+		"    fi\n"
+		"    __hs_start=\n"
+		"    PS1=\"$(hs prompt --exit-code=$e --duration=$d --shell=bash)\"\n"
 		"}\n"
+		"trap '__hs_preexec' DEBUG\n"
 		"PROMPT_COMMAND=\"__hs_precmd${PROMPT_COMMAND:+;$PROMPT_COMMAND}\""
 	);
 }
@@ -27,11 +40,20 @@ static void
 cmd_init_zsh(void)
 {
 	puts(
+		"typeset -g __hs_start\n"
+		"__hs_preexec() { __hs_start=$EPOCHREALTIME }\n"
 		"__hs_precmd() {\n"
 		"    local e=$?\n"
-		"    PROMPT=\"$(hs prompt --exit-code=$e --shell=zsh)\"\n"
+		"    local d=0\n"
+		"    if [[ -n $__hs_start ]]; then\n"
+		"        d=$(( (EPOCHREALTIME - __hs_start) * 1000 ))\n"
+		"        d=${d%%.*}\n"
+		"    fi\n"
+		"    __hs_start=\n"
+		"    PROMPT=\"$(hs prompt --exit-code=$e --duration=$d --shell=zsh)\"\n"
 		"}\n"
-		"precmd_functions+=(__hs_precmd)"
+		"precmd_functions+=(__hs_precmd)\n"
+		"preexec_functions+=(__hs_preexec)"
 	);
 }
 
@@ -109,6 +131,16 @@ parse_exit_code(int argc, char **argv)
 	return 0;
 }
 
+static long
+parse_duration(int argc, char **argv)
+{
+	for (int i = 2; i < argc; i++) {
+		if (strncmp(argv[i], "--duration=", 11) == 0)
+			return atol(argv[i] + 11);
+	}
+	return 0;
+}
+
 static const char *
 parse_shell(int argc, char **argv)
 {
@@ -125,6 +157,7 @@ static int
 cmd_prompt(int argc, char **argv)
 {
 	int exit_code     = parse_exit_code(argc, argv);
+	long duration_ms  = parse_duration(argc, argv);
 	const char *shell = parse_shell(argc, argv);
 	shell_t sh        = shell_detect(shell);
 
@@ -254,6 +287,24 @@ cmd_prompt(int argc, char **argv)
 		}
 	}
 
+	/* Segment: command duration */
+	if (duration_ms >= HS_DURATION_MIN_MS) {
+		prompt_append(&pb, " ");
+		prompt_color(&pb, HS_COLOR_DURATION);
+		prompt_append(&pb, HS_SYM_DURATION);
+		char dur[32];
+		if (duration_ms >= 60000) {
+			long min = duration_ms / 60000;
+			long sec = (duration_ms % 60000) / 1000;
+			snprintf(dur, sizeof(dur), "%ldm%lds", min, sec);
+		} else {
+			long sec = duration_ms / 1000;
+			snprintf(dur, sizeof(dur), "%lds", sec);
+		}
+		prompt_append(&pb, dur);
+		prompt_reset(&pb);
+	}
+
 	/* Segment: prompt char (on new line) */
 	prompt_append(&pb, "\n");
 	prompt_color(&pb, exit_code == 0 ? HS_COLOR_OK : HS_COLOR_ERR);
@@ -263,7 +314,8 @@ cmd_prompt(int argc, char **argv)
 	/* Agent mode: JSON output instead of prompt */
 	const char *agent = getenv("HS_AGENT");
 	if (agent && strcmp(agent, "1") == 0) {
-		printf("{\"cwd\":\"%s\",\"exit_code\":%d", cwd, exit_code);
+		printf("{\"cwd\":\"%s\",\"exit_code\":%d,\"duration_ms\":%ld",
+		       cwd, exit_code, duration_ms);
 		if (gi.is_repo) {
 			const char *st = git_state_string(gi.state);
 			printf(",\"git\":{\"branch\":\"%s\",\"detached\":%s,"
@@ -301,7 +353,12 @@ usage(void)
 		"\n"
 		"usage:\n"
 		"  hs init <bash|zsh>                      print shell init script\n"
-		"  hs prompt --exit-code=N --shell=SHELL    render prompt\n"
+		"  hs prompt [options]                       render prompt\n"
+		"\n"
+		"options:\n"
+		"  --exit-code=N    last command exit code\n"
+		"  --duration=MS    last command duration in milliseconds\n"
+		"  --shell=SHELL    bash or zsh\n"
 	);
 }
 
