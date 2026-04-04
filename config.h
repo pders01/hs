@@ -10,17 +10,17 @@
 #define HS_DURATION_MIN_MS  2000    /* show duration above this (ms)  */
 
 /* ── Symbols ──────────────────────────────────────────────────────── */
-#define HS_SYM_PROMPT       "❯"
-#define HS_SYM_FAILED       "✘"
+#define HS_SYM_PROMPT       "./"
+#define HS_SYM_PROMPT_ROOT  "#/"
+#define HS_SYM_SEP          " :: "
 #define HS_SYM_STAGED       "+"
 #define HS_SYM_MODIFIED     "!"
 #define HS_SYM_UNTRACKED    "?"
-#define HS_SYM_CONFLICTED   "×"
+#define HS_SYM_CONFLICTED   "x"
 #define HS_SYM_AHEAD        "↑"
 #define HS_SYM_BEHIND       "↓"
-#define HS_SYM_STASH        "≡"
-#define HS_SYM_DURATION     "took "
-#define HS_SYM_JOBS         "✦"
+#define HS_SYM_STASH        "~"
+#define HS_SYM_JOBS         "&"
 
 /* ── Colors (ANSI escape bodies, without \033[ prefix) ────────────── */
 #define HS_COLOR_DIR        "1;36"  /* bold cyan                      */
@@ -37,8 +37,6 @@
 #define HS_COLOR_ERR        "1;31"  /* bold red                       */
 #define HS_COLOR_SSH        "1;33"  /* bold yellow                    */
 #define HS_COLOR_DIM        "2"     /* dim/faint                      */
-#define HS_COLOR_DURATION   "1;33"  /* bold yellow                    */
-#define HS_COLOR_JOBS       "1;34"  /* bold blue                      */
 
 /* ── Feature toggles ──────────────────────────────────────────────── */
 #define HS_GIT_STATUS       1       /* enable git status counts       */
