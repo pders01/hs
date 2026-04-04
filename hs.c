@@ -84,7 +84,7 @@ shorten_dir(const char *cwd, char *out, size_t outsz)
 	const char *home = getenv("HOME");
 	if (!home) {
 		struct passwd *pw = getpwuid(getuid());
-		if (pw) home = pw->pw_dir;
+		if (pw && pw->pw_dir) home = pw->pw_dir;
 	}
 
 	const char *dir = cwd;
