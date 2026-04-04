@@ -134,8 +134,8 @@ git_info_collect(git_info_t *info, const char *cwd)
 				size_t a = 0, b = 0;
 				if (git_graph_ahead_behind(&a, &b, repo,
 				                           local_oid, up_oid) == 0) {
-					info->ahead  = (int)a;
-					info->behind = (int)b;
+					info->ahead  = (a > INT_MAX) ? INT_MAX : (int)a;
+					info->behind = (b > INT_MAX) ? INT_MAX : (int)b;
 				}
 			}
 			git_reference_free(upstream);
