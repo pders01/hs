@@ -310,7 +310,7 @@ cmd_prompt(int argc, char **argv)
 		prompt_append(&pb, HS_SYM_SEP);
 		prompt_reset(&pb);
 
-		/* Branch — turns red when conflicted */
+		/* Branch — turns red when conflicted, truncated from left */
 		if (gi.conflicted) {
 			prompt_color(&pb, HS_COLOR_CONFLICT);
 		} else {
@@ -320,7 +320,18 @@ cmd_prompt(int argc, char **argv)
 			prompt_append(&pb, "@");
 			prompt_append(&pb, gi.branch);
 		} else {
-			prompt_append(&pb, gi.branch);
+			size_t blen = strlen(gi.branch);
+			if (blen > HS_BRANCH_TRUNC) {
+				prompt_color(&pb, HS_COLOR_DIM);
+				prompt_append(&pb, "..");
+				if (gi.conflicted)
+					prompt_color(&pb, HS_COLOR_CONFLICT);
+				else
+					prompt_color(&pb, HS_COLOR_BRANCH);
+				prompt_append(&pb, gi.branch + blen - HS_BRANCH_TRUNC);
+			} else {
+				prompt_append(&pb, gi.branch);
+			}
 		}
 		prompt_reset(&pb);
 

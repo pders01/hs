@@ -4,6 +4,7 @@
 /* ── Prompt layout ────────────────────────────────────────────────── */
 #define HS_DIR_MAX_DEPTH    3       /* max path components to show    */
 #define HS_BRANCH_MAX       128     /* max branch name length         */
+#define HS_BRANCH_TRUNC     24      /* truncate branch display at N   */
 #define HS_PROMPT_BUF_SIZE  2048    /* stack buffer for prompt string */
 
 /* ── Thresholds ───────────────────────────────────────────────────── */
