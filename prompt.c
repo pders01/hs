@@ -51,29 +51,32 @@ prompt_color(prompt_buf_t *pb, const char *code)
 	 * Wrap ANSI escapes in shell-specific non-printing markers so the
 	 * shell can correctly calculate visible prompt width.
 	 *
+	 * Write the entire wrapped sequence atomically to prevent split
+	 * markers (e.g. \x01 without \x02) on buffer truncation.
+	 *
 	 * bash (programmatic PS1): \x01 ... \x02  (raw SOH/STX)
 	 * zsh:                     %{ ... %}
 	 */
-	char esc[64];
-	int n = snprintf(esc, sizeof(esc), "\033[%sm", code);
-	if (n < 0 || (size_t)n >= sizeof(esc))
-		return;
+	char wrapped[80];
+	int n;
 
 	switch (pb->shell) {
 	case SHELL_BASH:
-		buf_cat(pb, "\x01", 1);
-		buf_cat(pb, esc, (size_t)n);
-		buf_cat(pb, "\x02", 1);
+		n = snprintf(wrapped, sizeof(wrapped),
+			     "\x01\033[%sm\x02", code);
 		break;
 	case SHELL_ZSH:
-		buf_cat(pb, "%{", 2);
-		buf_cat(pb, esc, (size_t)n);
-		buf_cat(pb, "%}", 2);
+		n = snprintf(wrapped, sizeof(wrapped),
+			     "%%{\033[%sm%%}", code);
 		break;
 	default:
-		buf_cat(pb, esc, (size_t)n);
+		n = snprintf(wrapped, sizeof(wrapped),
+			     "\033[%sm", code);
 		break;
 	}
+
+	if (n > 0 && (size_t)n < sizeof(wrapped))
+		buf_cat(pb, wrapped, (size_t)n);
 }
 
 void
