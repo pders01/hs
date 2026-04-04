@@ -20,6 +20,7 @@
 #define HS_SYM_BEHIND       "↓"
 #define HS_SYM_STASH        "≡"
 #define HS_SYM_DURATION     "took "
+#define HS_SYM_JOBS         "✦"
 
 /* ── Colors (ANSI escape bodies, without \033[ prefix) ────────────── */
 #define HS_COLOR_DIR        "1;36"  /* bold cyan                      */
@@ -36,6 +37,7 @@
 #define HS_COLOR_ERR        "1;31"  /* bold red                       */
 #define HS_COLOR_DIM        "2"     /* dim/faint                      */
 #define HS_COLOR_DURATION   "1;33"  /* bold yellow                    */
+#define HS_COLOR_JOBS       "1;34"  /* bold blue                      */
 
 /* ── Feature toggles ──────────────────────────────────────────────── */
 #define HS_GIT_STATUS       1       /* enable git status counts       */

@@ -29,7 +29,8 @@ cmd_init_bash(void)
 		"        fi\n"
 		"    fi\n"
 		"    __hs_start=\n"
-		"    PS1=\"$(hs prompt --exit-code=$e --duration=$d --shell=bash)\"\n"
+		"    local j; j=$(jobs -p 2>/dev/null | wc -l)\n"
+	"    PS1=\"$(hs prompt --exit-code=$e --duration=$d --jobs=$j --shell=bash)\"\n"
 		"}\n"
 		"trap '__hs_preexec' DEBUG\n"
 		"PROMPT_COMMAND=\"__hs_precmd${PROMPT_COMMAND:+;$PROMPT_COMMAND}\""
@@ -50,7 +51,8 @@ cmd_init_zsh(void)
 		"        d=${d%%.*}\n"
 		"    fi\n"
 		"    __hs_start=\n"
-		"    PROMPT=\"$(hs prompt --exit-code=$e --duration=$d --shell=zsh)\"\n"
+		"    local j=${(%):-%j}\n"
+	"    PROMPT=\"$(hs prompt --exit-code=$e --duration=$d --jobs=$j --shell=zsh)\"\n"
 		"}\n"
 		"precmd_functions+=(__hs_precmd)\n"
 		"preexec_functions+=(__hs_preexec)"
@@ -141,6 +143,16 @@ parse_duration(int argc, char **argv)
 	return 0;
 }
 
+static int
+parse_jobs(int argc, char **argv)
+{
+	for (int i = 2; i < argc; i++) {
+		if (strncmp(argv[i], "--jobs=", 7) == 0)
+			return atoi(argv[i] + 7);
+	}
+	return 0;
+}
+
 static const char *
 parse_shell(int argc, char **argv)
 {
@@ -158,6 +170,7 @@ cmd_prompt(int argc, char **argv)
 {
 	int exit_code     = parse_exit_code(argc, argv);
 	long duration_ms  = parse_duration(argc, argv);
+	int jobs          = parse_jobs(argc, argv);
 	const char *shell = parse_shell(argc, argv);
 	shell_t sh        = shell_detect(shell);
 
@@ -305,6 +318,16 @@ cmd_prompt(int argc, char **argv)
 		prompt_reset(&pb);
 	}
 
+	/* Segment: background jobs */
+	if (jobs > 0) {
+		prompt_append(&pb, " ");
+		prompt_color(&pb, HS_COLOR_JOBS);
+		char tmp[16];
+		snprintf(tmp, sizeof(tmp), "%s%d", HS_SYM_JOBS, jobs);
+		prompt_append(&pb, tmp);
+		prompt_reset(&pb);
+	}
+
 	/* Segment: prompt char (on new line) */
 	prompt_append(&pb, "\n");
 	prompt_color(&pb, exit_code == 0 ? HS_COLOR_OK : HS_COLOR_ERR);
@@ -314,8 +337,8 @@ cmd_prompt(int argc, char **argv)
 	/* Agent mode: JSON output instead of prompt */
 	const char *agent = getenv("HS_AGENT");
 	if (agent && strcmp(agent, "1") == 0) {
-		printf("{\"cwd\":\"%s\",\"exit_code\":%d,\"duration_ms\":%ld",
-		       cwd, exit_code, duration_ms);
+		printf("{\"cwd\":\"%s\",\"exit_code\":%d,\"duration_ms\":%ld,\"jobs\":%d",
+		       cwd, exit_code, duration_ms, jobs);
 		if (gi.is_repo) {
 			const char *st = git_state_string(gi.state);
 			printf(",\"git\":{\"branch\":\"%s\",\"detached\":%s,"
@@ -358,6 +381,7 @@ usage(void)
 		"options:\n"
 		"  --exit-code=N    last command exit code\n"
 		"  --duration=MS    last command duration in milliseconds\n"
+		"  --jobs=N         number of background jobs\n"
 		"  --shell=SHELL    bash or zsh\n"
 	);
 }
