@@ -435,12 +435,12 @@ cmd_prompt(int argc, char **argv)
 	}
 
 	/* Prompt char */
-	prompt_append(&pb, "\n");
+	prompt_append(&pb, " ");
 	int is_root = (getuid() == 0);
 	prompt_color(&pb, (exit_code == 0 && !is_root) ? HS_COLOR_OK : HS_COLOR_ERR);
 	prompt_append(&pb, is_root ? HS_SYM_PROMPT_ROOT : HS_SYM_PROMPT);
-	prompt_append(&pb, " ");
 	prompt_reset(&pb);
+	prompt_append(&pb, " ");
 
 	prompt_flush(&pb);
 	git_info_cleanup(&gi);
