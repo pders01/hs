@@ -121,6 +121,26 @@ shorten_dir(const char *cwd, char *out, size_t outsz)
 	return out;
 }
 
+/* ── JSON helpers ─────────────────────────────────────────────────── */
+
+static void
+json_escape(const char *src, char *dst, size_t dstsz)
+{
+	size_t di = 0;
+	for (size_t i = 0; src[i] && di + 6 < dstsz; i++) {
+		unsigned char c = (unsigned char)src[i];
+		if (c == '"' || c == '\\') {
+			dst[di++] = '\\';
+			dst[di++] = (char)c;
+		} else if (c < 0x20) {
+			di += (size_t)snprintf(dst + di, dstsz - di, "\\u%04x", c);
+		} else {
+			dst[di++] = (char)c;
+		}
+	}
+	dst[di] = '\0';
+}
+
 /* ── Argument parsing ─────────────────────────────────────────────── */
 
 static int
@@ -356,17 +376,21 @@ cmd_prompt(int argc, char **argv)
 	/* Agent mode: JSON output instead of prompt */
 	const char *agent = getenv("HS_AGENT");
 	if (agent && strcmp(agent, "1") == 0) {
+		char esc_cwd[PATH_MAX * 2];
+		json_escape(cwd, esc_cwd, sizeof(esc_cwd));
 		printf("{\"cwd\":\"%s\",\"exit_code\":%d,\"duration_ms\":%ld,\"jobs\":%d,\"ssh\":%s",
-		       cwd, exit_code, duration_ms, jobs,
+		       esc_cwd, exit_code, duration_ms, jobs,
 		       is_ssh ? "true" : "false");
 		if (gi.is_repo) {
+			char esc_branch[HS_BRANCH_MAX * 2];
+			json_escape(gi.branch, esc_branch, sizeof(esc_branch));
 			const char *st = git_state_string(gi.state);
 			printf(",\"git\":{\"branch\":\"%s\",\"detached\":%s,"
 			       "\"dirty\":%s,\"staged\":%d,\"modified\":%d,"
 			       "\"untracked\":%d,\"conflicted\":%d,"
 			       "\"ahead\":%d,\"behind\":%d,"
 			       "\"stash\":%d,\"state\":\"%s\"}",
-			       gi.branch,
+			       esc_branch,
 			       gi.detached ? "true" : "false",
 			       (gi.staged || gi.modified || gi.untracked ||
 			        gi.conflicted) ? "true" : "false",
