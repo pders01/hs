@@ -1,4 +1,5 @@
 #include "git.h"
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <git2.h>
@@ -44,8 +45,10 @@ git_info_collect(git_info_t *info, const char *cwd)
 	git_libgit2_init();
 
 	git_repository *repo = NULL;
-	if (git_repository_open_ext(&repo, cwd, 0, NULL) != 0)
+	if (git_repository_open_ext(&repo, cwd, 0, NULL) != 0) {
+		git_libgit2_shutdown();
 		return;
+	}
 
 	info->is_repo = 1;
 
